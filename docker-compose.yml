@@ -4,7 +4,7 @@ services:
     image: wordpress:latest
     container_name: wp
     ports:
-      - ${IP}:80:80 # change ip if required
+      - 80:80 
     volumes:
       - ./config/php.conf.ini:/usr/local/etc/php/conf.d/conf.ini
       - ./wp-app:/var/www/html # Full wordpress project 
@@ -19,13 +19,13 @@ services:
       - db
 
   wpcli:
-    image: wordpress:cli
-    container_name: wpcli
+    image: wordpress:cli-php8.2
+    container_name: wp_cli
     volumes:
       - ./config/php.conf.ini:/usr/local/etc/php/conf.d/conf.ini
       - ./wp-app:/var/www/html
     environment:
-      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_HOST: "$DB_HOST"
       WORDPRESS_DB_NAME: "${DB_NAME}"
       WORDPRESS_DB_USER: "${WP_ADMIN_USER}"
       WORDPRESS_DB_PASSWORD: "${DB_PASSWORD}"
@@ -42,7 +42,7 @@ services:
       PMA_PORT: 3306
       MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"
     ports:
-      - ${IP}:8080:80
+      - 8080:80
     links:
       - db:db
 
@@ -50,7 +50,7 @@ services:
     image: mysql:latest
     container_name: db
     ports:
-      - ${IP}:3306:3306 # change ip if required
+      - 3306:3306 
     command: [
         '--default_authentication_plugin=mysql_native_password',
         '--character-set-server=utf8mb4',
@@ -61,22 +61,7 @@ services:
       - db_data:/var/lib/mysql
     environment:
       MYSQL_DATABASE: "${DB_NAME}"
-      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"
-
-# Check availability of essential services
-  healthcheck:
-    image: wpcli
-    build: ./wpcli/
-    container_name: ${COMPOSE_PROJECT_NAME}_healthcheck
-    command: sh -c "/wait"
-    environment:
-      - WAIT_HOSTS=mysql:3306, wordpress:80
-      - WAIT_BEFORE_HOSTS=${WAIT_BEFORE_HOSTS:-30}
-      - WAIT_AFTER_HOSTS=${WAIT_AFTER_HOSTS:-15}
-      - WAIT_HOSTS_TIMEOUT=${WAIT_HOSTS_TIMEOUT:-300}
-      - WAIT_SLEEP_INTERVAL=${WAIT_SLEEP_INTERVAL:-30}
-      - WAIT_HOST_CONNECT_TIMEOUT=${WAIT_HOST_CONNECT_TIMEOUT:-30}
-
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}" 
 
 volumes:
   db_data:
