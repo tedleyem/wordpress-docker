@@ -1,0 +1,82 @@
+version: '3'
+services:
+  wp:
+    image: wordpress:latest
+    container_name: wp
+    ports:
+      - ${IP}:80:80 # change ip if required
+    volumes:
+      - ./config/php.conf.ini:/usr/local/etc/php/conf.d/conf.ini
+      - ./wp-app:/var/www/html # Full wordpress project 
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: "${DB_NAME}"
+      WORDPRESS_DB_USER: "${WP_ADMIN_USER}"
+      WORDPRESS_DB_PASSWORD: "${DB_PASSWORD}"
+    depends_on:
+      - db
+    links:
+      - db
+
+  wpcli:
+    image: wordpress:cli
+    container_name: wpcli
+    volumes:
+      - ./config/php.conf.ini:/usr/local/etc/php/conf.d/conf.ini
+      - ./wp-app:/var/www/html
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: "${DB_NAME}"
+      WORDPRESS_DB_USER: "${WP_ADMIN_USER}"
+      WORDPRESS_DB_PASSWORD: "${DB_PASSWORD}"
+    depends_on:
+      - db
+      - wp
+
+  pma:
+    image: phpmyadmin/phpmyadmin
+    container_name: pma
+    environment:
+      # https://docs.phpmyadmin.net/en/latest/setup.html
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"
+    ports:
+      - ${IP}:8080:80
+    links:
+      - db:db
+
+  db:
+    image: mysql:latest
+    container_name: db
+    ports:
+      - ${IP}:3306:3306 # change ip if required
+    command: [
+        '--default_authentication_plugin=mysql_native_password',
+        '--character-set-server=utf8mb4',
+        '--collation-server=utf8mb4_unicode_ci'
+    ]
+    volumes:
+      - ./wp-data:/docker-entrypoint-initdb.d
+      - db_data:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: "${DB_NAME}"
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"
+
+# Check availability of essential services
+  healthcheck:
+    image: wpcli
+    build: ./wpcli/
+    container_name: ${COMPOSE_PROJECT_NAME}_healthcheck
+    command: sh -c "/wait"
+    environment:
+      - WAIT_HOSTS=mysql:3306, wordpress:80
+      - WAIT_BEFORE_HOSTS=${WAIT_BEFORE_HOSTS:-30}
+      - WAIT_AFTER_HOSTS=${WAIT_AFTER_HOSTS:-15}
+      - WAIT_HOSTS_TIMEOUT=${WAIT_HOSTS_TIMEOUT:-300}
+      - WAIT_SLEEP_INTERVAL=${WAIT_SLEEP_INTERVAL:-30}
+      - WAIT_HOST_CONNECT_TIMEOUT=${WAIT_HOST_CONNECT_TIMEOUT:-30}
+
+
+volumes:
+  db_data:

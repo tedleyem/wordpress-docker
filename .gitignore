@@ -1,0 +1,9 @@
+# github workflow settings 
+.workflow.properties
+# sql data settings 
+*.sql
+*.sql--
+
+# wordpress data 
+wp-app/*
+wp-data/*
