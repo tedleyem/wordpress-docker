@@ -6,9 +6,7 @@ Dockerfile
 .gitignore
 .git
 
-Makefile
-publish.sh
-README.md
-run-docker.sh
+export.sh
+README.md 
 
 wp-content/uploads

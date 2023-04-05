@@ -1,7 +1,7 @@
 version: '3'
 services:
   wp:
-    image: wordpress:latest
+    image: wordpress:latest #php8.2-fpm-alpine
     container_name: wp
     ports:
       - 80:80 
@@ -10,47 +10,20 @@ services:
       - ./wp-app:/var/www/html # Full wordpress project 
     environment:
       WORDPRESS_DB_HOST: db
-      WORDPRESS_DB_NAME: "${DB_NAME}"
-      WORDPRESS_DB_USER: "${WP_ADMIN_USER}"
+      WORDPRESS_DB_NAME: "${DATABASE_NAME}"
+      WORDPRESS_DB_USER: "${DB_USER}"
       WORDPRESS_DB_PASSWORD: "${DB_PASSWORD}"
     depends_on:
       - db
     links:
-      - db
-
-  wpcli:
-    image: wordpress:cli-php8.2
-    container_name: wp_cli
-    volumes:
-      - ./config/php.conf.ini:/usr/local/etc/php/conf.d/conf.ini
-      - ./wp-app:/var/www/html
-    environment:
-      WORDPRESS_DB_HOST: "$DB_HOST"
-      WORDPRESS_DB_NAME: "${DB_NAME}"
-      WORDPRESS_DB_USER: "${WP_ADMIN_USER}"
-      WORDPRESS_DB_PASSWORD: "${DB_PASSWORD}"
-    depends_on:
-      - db
-      - wp
-
-  pma:
-    image: phpmyadmin/phpmyadmin
-    container_name: pma
-    environment:
-      # https://docs.phpmyadmin.net/en/latest/setup.html
-      PMA_HOST: db
-      PMA_PORT: 3306
-      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"
-    ports:
-      - 8080:80
-    links:
-      - db:db
+      - db 
 
   db:
-    image: mysql:latest
+    image: mysql:5.7
     container_name: db
     ports:
-      - 3306:3306 
+      - 3306:3306
+      - 33060:33060
     command: [
         '--default_authentication_plugin=mysql_native_password',
         '--character-set-server=utf8mb4',
@@ -60,8 +33,10 @@ services:
       - ./wp-data:/docker-entrypoint-initdb.d
       - db_data:/var/lib/mysql
     environment:
-      MYSQL_DATABASE: "${DB_NAME}"
-      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}" 
-
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "${DATABASE_NAME}"
+      MYSQL_USER: "${DB_USER}"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"  
+      
 volumes:
   db_data:
