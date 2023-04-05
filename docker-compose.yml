@@ -1,13 +1,14 @@
 version: '3'
 services:
   wp:
-    image: wordpress:latest #php8.2-fpm-alpine
+    image: wordpress:latest 
     container_name: wp
     ports:
       - 80:80 
     volumes:
       - ./config/php.conf.ini:/usr/local/etc/php/conf.d/conf.ini
       - ./wp-app:/var/www/html # Full wordpress project 
+      #- wp-app:/var/www/html 
     environment:
       WORDPRESS_DB_HOST: db
       WORDPRESS_DB_NAME: "${DATABASE_NAME}"
@@ -17,10 +18,25 @@ services:
       - db
     links:
       - db 
+  
+  pma:
+  # https://docs.phpmyadmin.net/en/latest/setup.html
+    image: phpmyadmin:latest
+    container_name: pma
+    environment:
+      PMA_HOST: db 
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"
+    ports:
+      - 8090:80
+    links:
+      - db
+    depends_on:
+      - db 
 
   db:
     image: mysql:5.7
     container_name: db
+    platform: linux/x86_64
     ports:
       - 3306:3306
       - 33060:33060
@@ -40,3 +56,4 @@ services:
       
 volumes:
   db_data:
+  #wp_app:
